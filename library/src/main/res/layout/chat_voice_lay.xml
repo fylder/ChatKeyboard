@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FF4444">
+
+    <fylder.keyboard.lib.view.RecordingView
+        android:id="@+id/chat_voice_record"
+        android:layout_width="180dp"
+        android:layout_height="180dp"
+        android:layout_centerInParent="true" />
+
+    <ImageView
+        android:id="@+id/chat_voice_img"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:src="@drawable/record_fab" />
+
+    <TextView
+        android:id="@+id/chat_voice_tip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/chat_voice_img"
+        android:layout_centerHorizontal="true"
+        android:padding="4dp"
+        android:text="按住说话"
+        android:textColor="#EEEEEE"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/chat_voice_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/chat_voice_tip"
+        android:layout_centerHorizontal="true"
+        android:padding="4dp"
+        android:text="00:00"
+        android:textColor="#EEEEEE"
+        android:textSize="24sp" />
+
+</RelativeLayout>
