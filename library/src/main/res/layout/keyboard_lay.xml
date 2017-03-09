@@ -44,7 +44,7 @@
                     android:layout_centerVertical="true"
                     android:src="@mipmap/chatroom_input_icon_face" />
 
-                <fylder.keyboard.lib.view.EmoticonsEditText
+                <fylder.keyboard.lib.view.HadEditText
                     android:id="@+id/keyboard_msg"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

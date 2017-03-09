@@ -1,9 +1,9 @@
 package fylder.keyboard.lib.utils;
 
+
 import java.util.ArrayList;
 
 import fylder.keyboard.lib.bean.EmoticonSetBean;
-
 
 public class EmoticonsKeyboardBuilder {
 

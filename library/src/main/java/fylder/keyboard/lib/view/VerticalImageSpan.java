@@ -6,19 +6,17 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.text.style.ImageSpan;
 
-/**
- * Created by zsj on 2015/2/14.
- */
 public class VerticalImageSpan extends ImageSpan {
 
     public VerticalImageSpan(Drawable drawable) {
-        super(drawable);
+        super(drawable, ImageSpan.ALIGN_BOTTOM);
     }
 
-    public int getSize(Paint paint, CharSequence text, int start, int end, Paint.FontMetricsInt fontMetricsInt) {
+    @Override
+    public int getSize(Paint paint, CharSequence text, int start, int end, Paint.FontMetricsInt fm) {
         Drawable drawable = getDrawable();
         Rect rect = drawable.getBounds();
-        if (fontMetricsInt != null) {
+        if (fm != null) {
             Paint.FontMetricsInt fmPaint = paint.getFontMetricsInt();
             int fontHeight = fmPaint.bottom - fmPaint.top;
             int drHeight = rect.bottom - rect.top;
@@ -26,10 +24,10 @@ public class VerticalImageSpan extends ImageSpan {
             int top = drHeight / 2 - fontHeight / 4;
             int bottom = drHeight / 2 + fontHeight / 4;
 
-            fontMetricsInt.ascent = -bottom;
-            fontMetricsInt.top = -bottom;
-            fontMetricsInt.bottom = top;
-            fontMetricsInt.descent = top;
+            fm.ascent = -bottom;
+            fm.top = -bottom;
+            fm.bottom = top;
+            fm.descent = top;
         }
         return rect.right;
     }

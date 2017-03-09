@@ -19,28 +19,31 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.Date;
 
 import fylder.keyboard.lib.bean.EmoticonBean;
+import fylder.keyboard.lib.bean.EmoticonSetBean;
+import fylder.keyboard.lib.db.EmoticonDBHelper;
 import fylder.keyboard.lib.utils.DisplayUtils;
+import fylder.keyboard.lib.utils.EmoticonHandler;
 import fylder.keyboard.lib.utils.EmoticonsKeyboardBuilder;
-import fylder.keyboard.lib.utils.EmoticonsUtils;
 import fylder.keyboard.lib.utils.TimeTools;
 import fylder.keyboard.lib.utils.Utils;
 import fylder.keyboard.lib.utils.VoiceUtils;
-import fylder.keyboard.lib.view.AutoHeightLayout;
-import fylder.keyboard.lib.view.EmoticonsEditText;
+import fylder.keyboard.lib.view.EmoticonLayout;
 import fylder.keyboard.lib.view.EmoticonsIndicatorView;
 import fylder.keyboard.lib.view.EmoticonsPageView;
+import fylder.keyboard.lib.view.EmoticonsToolBarView;
+import fylder.keyboard.lib.view.HadEditText;
 import fylder.keyboard.lib.view.RecordingView;
-import fylder.keyboard.lib.view.imp.IEmoticonsKeyboard;
-import fylder.keyboard.lib.view.imp.IView;
+import fylder.keyboard.lib.view.SoftHandleLayout;
 
 /**
  * chat demo
  * Created by fylder on 2015/8/25.
  */
-public class KeyBoardBar extends AutoHeightLayout implements View.OnClickListener, IEmoticonsKeyboard {
+public class KeyBoardBar extends SoftHandleLayout implements View.OnClickListener, EmoticonsToolBarView.OnToolBarItemClickListener {
 
     String TAG = KeyBoardBar.class.getName();
 
@@ -58,7 +61,7 @@ public class KeyBoardBar extends AutoHeightLayout implements View.OnClickListene
 
     RelativeLayout footerLay;//显示内容
     RelativeLayout msgLay;
-    EmoticonsEditText msgEdit;//信息输入
+    HadEditText msgEdit;//信息输入
     RelativeLayout msgDefaultLay;
     ImageView actionImg;
     ImageView voiceImg;
@@ -87,7 +90,7 @@ public class KeyBoardBar extends AutoHeightLayout implements View.OnClickListene
 
     private void initView() {
         msgLay = (RelativeLayout) findViewById(R.id.keyboard_msg_lay);
-        msgEdit = (EmoticonsEditText) findViewById(R.id.keyboard_msg);
+        msgEdit = (HadEditText) findViewById(R.id.keyboard_msg);
         msgDefaultLay = (RelativeLayout) findViewById(R.id.keyboard_msg_default_lay);
         actionImg = (ImageView) findViewById(R.id.keyboard_msg_default_up_down);
         voiceImg = (ImageView) findViewById(R.id.keyboard_voice);
@@ -107,6 +110,21 @@ public class KeyBoardBar extends AutoHeightLayout implements View.OnClickListene
         init();
     }
 
+    private void init() {
+//        EmoticonHandler.getInstance(mContext).loadEmoticonsToMemory();
+        LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+//        View emotionView = inflater.inflate(R.layout.chat_emotion_lay, null);
+//        add(emotionView);
+        showEmoticons();
+
+        View moreView = inflater.inflate(R.layout.chat_more_lay, null);
+        initMoreLay(moreView);
+        add(moreView);
+
+        View voiceView = inflater.inflate(R.layout.chat_voice_lay, null);
+        initRecordView(voiceView);
+        add(voiceView);
+    }
 
     boolean isVoice = false;
     boolean isVoiceShow = false;
@@ -203,20 +221,20 @@ public class KeyBoardBar extends AutoHeightLayout implements View.OnClickListene
                 }
             }
         });
-        msgEdit.setOnSizeChangedListener(new EmoticonsEditText.OnSizeChangedListener() {
-            @Override
-            public void onSizeChanged() {
-                post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (mKeyBoardBarViewListener != null) {
-                            mKeyBoardBarViewListener.OnKeyBoardStateChange(mKeyboardState, -1);
-                        }
-                    }
-                });
-            }
-        });
-        msgEdit.setOnTextChangedInterface(new EmoticonsEditText.OnTextChangedInterface() {
+//        msgEdit.setOnSizeChangedListener(new EmoticonsEditText.OnSizeChangedListener() {
+//            @Override
+//            public void onSizeChanged() {
+//                post(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        if (mKeyBoardBarViewListener != null) {
+//                            mKeyBoardBarViewListener.OnKeyBoardStateChange(mKeyboardState, -1);
+//                        }
+//                    }
+//                });
+//            }
+//        });
+        msgEdit.setOnTextChangedInterface(new HadEditText.OnTextChangedInterface() {
             @Override
             public void onTextChanged(CharSequence arg0) {
                 String str = arg0.toString();
@@ -271,6 +289,59 @@ public class KeyBoardBar extends AutoHeightLayout implements View.OnClickListene
         footerLay.addView(view, params);
     }
 
+
+    public void showEmoticons() {
+//        btnEmoticon.setVisibility(VISIBLE);
+        EmoticonsKeyboardBuilder builder = getBuilder(mContext);
+        EmoticonLayout layout = new EmoticonLayout(mContext);
+        layout.setContents(builder, new EmoticonLayout.OnEmoticonListener() {
+            @Override
+            public void onEmoticonItemClicked(EmoticonBean bean) {
+                if (msgEdit != null) {
+                    msgEdit.setFocusable(true);
+                    msgEdit.setFocusableInTouchMode(true);
+                    msgEdit.requestFocus();
+
+                    if (bean.getEventType() == EmoticonBean.FACE_TYPE_DEL) {
+                        int action = KeyEvent.ACTION_DOWN;
+                        int code = KeyEvent.KEYCODE_DEL;
+                        KeyEvent event = new KeyEvent(action, code);
+                        msgEdit.onKeyDown(KeyEvent.KEYCODE_DEL, event);
+                        return;
+                    } else if (bean.getEventType() == EmoticonBean.FACE_TYPE_USERDEF) {
+                        if (mKeyBoardBarViewListener != null) {
+                            Log.w("fylder","tag:"+bean.getTag()+"\turi:"+bean.getIconUri());
+//                            mKeyBoardBarViewListener.onUserDefEmoticonClicked(bean.getTag(), bean.getIconUri()); //暂不处理
+                        }
+                        return;
+                    }
+
+                    int index = msgEdit.getSelectionStart();
+                    Editable editable = msgEdit.getEditableText();
+                    if (index < 0) {
+                        editable.append(bean.getTag());
+                    } else {
+                        editable.insert(index, bean.getTag());
+                    }
+                }
+            }
+        });
+        add(layout);
+//        FUNC_EMOTICON_POS = FUNC_ORDER_COUNT;
+//        ++FUNC_ORDER_COUNT;
+    }
+
+    private EmoticonsKeyboardBuilder getBuilder(Context context) {
+        if (context == null) {
+            throw new RuntimeException(" Context is null, cannot create db helper");
+        }
+        EmoticonDBHelper emoticonDbHelper = new EmoticonDBHelper(context);
+        ArrayList<EmoticonSetBean> mEmoticonSetBeanList = emoticonDbHelper.queryAllEmoticonSet();
+        emoticonDbHelper.cleanup();
+
+        return new EmoticonsKeyboardBuilder.Builder().setEmoticonSetBeanList(mEmoticonSetBeanList).build();
+    }
+
     /**
      * 显示那块布局
      *
@@ -307,14 +378,14 @@ public class KeyBoardBar extends AutoHeightLayout implements View.OnClickListene
 
 
     @Override
-    public void onSoftPop(int height) {
-        super.onSoftPop(height);
+    public void OnSoftKeyboardPop(int height) {
+        super.OnSoftKeyboardPop(height);
         mState = STATE_EMTY;//恢复状态
     }
 
     @Override
-    public void onSoftClose(int height) {
-        super.onSoftClose(height);
+    public void OnSoftKeyboardClose() {
+        super.OnSoftKeyboardClose();
         if (mState == STATE_MORE) {//弹出更多，键盘消失
             mState = STATE_EMTY;//恢复状态
         } else if (mState == STATE_VOICE) {
@@ -324,21 +395,6 @@ public class KeyBoardBar extends AutoHeightLayout implements View.OnClickListene
         } else {
             hideAutoView();
         }
-    }
-
-    private void init() {
-        LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View emotionView = inflater.inflate(R.layout.chat_emotion_lay, null);
-        initEmotion(emotionView);
-        add(emotionView);
-
-        View moreView = inflater.inflate(R.layout.chat_more_lay, null);
-        initMoreLay(moreView);
-        add(moreView);
-
-        View voiceView = inflater.inflate(R.layout.chat_voice_lay, null);
-        initRecordView(voiceView);
-        add(voiceView);
     }
 
     //*******Record**********
@@ -495,83 +551,6 @@ public class KeyBoardBar extends AutoHeightLayout implements View.OnClickListene
      *
      * @param view
      */
-    private void initEmotion(View view) {
-
-        mEmoticonsPageView = (EmoticonsPageView) view.findViewById(R.id.item_emotion_pager);
-        mEmoticonsIndicatorView = (EmoticonsIndicatorView) view.findViewById(R.id.item_emotion_indicator);
-
-        setBuilder(EmoticonsUtils.getBuilder(mContext));
-
-        mEmoticonsPageView.setOnIndicatorListener(new EmoticonsPageView.OnEmoticonsPageViewListener() {
-            @Override
-            public void emoticonsPageViewInitFinish(int count) {
-                mEmoticonsIndicatorView.init(count);
-            }
-
-            @Override
-            public void emoticonsPageViewCountChanged(int count) {
-                mEmoticonsIndicatorView.setIndicatorCount(count);
-            }
-
-            @Override
-            public void playTo(int position) {
-                mEmoticonsIndicatorView.playTo(position);
-            }
-
-            @Override
-            public void playBy(int oldPosition, int newPosition) {
-                mEmoticonsIndicatorView.playBy(oldPosition, newPosition);
-            }
-        });
-        mEmoticonsPageView.setIViewListener(new IView() {
-            @Override
-            public void onItemClick(EmoticonBean bean) {
-                if (msgEdit != null) {
-                    msgEdit.setFocusable(true);
-                    msgEdit.setFocusableInTouchMode(true);
-                    msgEdit.requestFocus();
-
-                    // 删除
-                    if (bean.getEventType() == EmoticonBean.FACE_TYPE_DEL) {
-                        int action = KeyEvent.ACTION_DOWN;
-                        int code = KeyEvent.KEYCODE_DEL;
-                        KeyEvent event = new KeyEvent(action, code);
-                        msgEdit.onKeyDown(KeyEvent.KEYCODE_DEL, event);
-                        return;
-                    }
-                    // 用户自定义
-                    else if (bean.getEventType() == EmoticonBean.FACE_TYPE_USERDEF) {
-                        return;
-                    }
-
-                    int index = msgEdit.getSelectionStart();
-                    Editable editable = msgEdit.getEditableText();
-                    if (index < 0) {
-                        editable.append(bean.getContent());
-                    } else {
-                        editable.insert(index, bean.getContent());
-                    }
-                }
-            }
-
-            @Override
-            public void onItemDisplay(EmoticonBean bean) {
-            }
-
-            @Override
-            public void onPageChangeTo(int position) {
-
-            }
-        });
-
-
-    }
-
-    @Override
-    public void setBuilder(EmoticonsKeyboardBuilder builder) {
-        mEmoticonsPageView.setBuilder(builder);
-        // mEmoticonsToolBarView.setBuilder(builder);
-    }
 
 
     /**
@@ -597,6 +576,11 @@ public class KeyBoardBar extends AutoHeightLayout implements View.OnClickListene
 
     public void setOnKeyBoardBarViewListener(KeyBoardBarViewListener l) {
         this.mKeyBoardBarViewListener = l;
+    }
+
+    @Override
+    public void onToolBarItemClick(int position) {
+
     }
 
     public interface KeyBoardBarViewListener {

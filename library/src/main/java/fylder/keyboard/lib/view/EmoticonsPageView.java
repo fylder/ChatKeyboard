@@ -8,6 +8,7 @@ import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.GridView;
 import android.widget.RelativeLayout;
 
@@ -17,15 +18,12 @@ import java.util.List;
 import fylder.keyboard.lib.adapter.EmoticonsAdapter;
 import fylder.keyboard.lib.bean.EmoticonBean;
 import fylder.keyboard.lib.bean.EmoticonSetBean;
-import fylder.keyboard.lib.utils.DisplayUtils;
 import fylder.keyboard.lib.utils.EmoticonsKeyboardBuilder;
 import fylder.keyboard.lib.utils.Utils;
-import fylder.keyboard.lib.view.imp.IEmoticonsKeyboard;
 import fylder.keyboard.lib.view.imp.IView;
 
 
-public class EmoticonsPageView extends ViewPager implements IEmoticonsKeyboard, IView {
-
+public class EmoticonsPageView extends ViewPager implements IView {
     private Context mContext;
     private int mHeight = 0;
     private int mMaxEmoticonSetPageCount = 0;
@@ -33,7 +31,7 @@ public class EmoticonsPageView extends ViewPager implements IEmoticonsKeyboard, 
 
     private List<EmoticonSetBean> mEmoticonSetBeanList;
     private EmoticonsViewPagerAdapter mEmoticonsViewPagerAdapter;
-    private ArrayList<View> mEmoticonPageViews = new ArrayList<View>();
+    private ArrayList<View> mEmoticonPageViews = new ArrayList<>();
 
     public EmoticonsPageView(Context context) {
         this(context, null);
@@ -47,8 +45,7 @@ public class EmoticonsPageView extends ViewPager implements IEmoticonsKeyboard, 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        mHeight = DisplayUtils.dp2px(mContext, Utils.getDefKeyboardHeight(mContext) - 20);//高度获取不了
-        //  Log.i("fylderLog", "w:" + w + "\th:" + h + "\toldw:" + oldw + "\toldh:" + oldh + "\t\t  mHeight=" + mHeight + "\t\t  keyboardHeight=" + Utils.getDefKeyboardHeight(mContext));
+        mHeight = h;
         EmoticonsPageView.this.post(new Runnable() {
             @Override
             public void run() {
@@ -58,75 +55,12 @@ public class EmoticonsPageView extends ViewPager implements IEmoticonsKeyboard, 
     }
 
     private void updateView() {
-        if (mEmoticonSetBeanList == null) {
-            return;
-        }
+        if (mEmoticonSetBeanList == null) return;
 
         if (mEmoticonsViewPagerAdapter == null) {
             mEmoticonsViewPagerAdapter = new EmoticonsViewPagerAdapter();
             setAdapter(mEmoticonsViewPagerAdapter);
-            setOnPageChangeListener(new OnPageChangeListener() {
-                @Override
-                public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                }
-
-                @Override
-                public void onPageSelected(int position) {
-                    if (mOldPagePosition < 0) {
-                        mOldPagePosition = 0;
-                    }
-                    int end = 0;
-                    int pagerPosition = 0;
-                    for (EmoticonSetBean emoticonSetBean : mEmoticonSetBeanList) {
-
-                        int size = getPageCount(emoticonSetBean);
-
-                        if (end + size > position) {
-                            if (mOnEmoticonsPageViewListener != null) {
-                                mOnEmoticonsPageViewListener.emoticonsPageViewCountChanged(size);
-                            }
-                            // 上一页
-                            if (mOldPagePosition - end >= size) {
-                                if (position - end >= 0) {
-                                    if (mOnEmoticonsPageViewListener != null) {
-                                        mOnEmoticonsPageViewListener.playTo(position - end);
-                                    }
-                                }
-                                if (mIViewListeners != null && !mIViewListeners.isEmpty()) {
-                                    for (IView listener : mIViewListeners) {
-                                        listener.onPageChangeTo(pagerPosition);
-                                    }
-                                }
-                                break;
-                            }
-                            // 下一页
-                            if (mOldPagePosition - end < 0) {
-                                if (mOnEmoticonsPageViewListener != null) {
-                                    mOnEmoticonsPageViewListener.playTo(0);
-                                }
-                                if (mIViewListeners != null && !mIViewListeners.isEmpty()) {
-                                    for (IView listener : mIViewListeners) {
-                                        listener.onPageChangeTo(pagerPosition);
-                                    }
-                                }
-                                break;
-                            }
-                            // 本页切换
-                            if (mOnEmoticonsPageViewListener != null) {
-                                mOnEmoticonsPageViewListener.playBy(mOldPagePosition - end, position - end);
-                            }
-                            break;
-                        }
-                        pagerPosition++;
-                        end += size;
-                    }
-                    mOldPagePosition = position;
-                }
-
-                @Override
-                public void onPageScrollStateChanged(int state) {
-                }
-            });
+            setOnPageChangeListener(new PageChangeListener());
         }
 
         int screenWidth = Utils.getDisplayWidthPixels(mContext);
@@ -152,31 +86,13 @@ public class EmoticonsPageView extends ViewPager implements IEmoticonsKeyboard, 
                 int end = everyPageMaxSum > emoticonSetSum ? emoticonSetSum : everyPageMaxSum;
 
                 RelativeLayout.LayoutParams gridParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-                gridParams.addRule(ResizeLayout.CENTER_VERTICAL);
-
+                gridParams.addRule(SoftListenLayout.CENTER_VERTICAL);
 
                 int itemHeight = Math.min((screenWidth - (bean.getRow() - 1) * Utils.dip2px(mContext, bean.getHorizontalSpacing())) / bean.getRow(), (maxPagerHeight - (bean.getLine() - 1) * Utils.dip2px(mContext, bean.getVerticalSpacing())) / bean.getLine());
-                // int itemHeight = Math.min(screenWidth / bean.getRow(), maxPagerHeight / bean.getLine());//maxPagerHeight  ？
-                // Log.i("fylderLog", "itemHeight:" + itemHeight + "");
-//                // 计算行距
-//                if (bean.getHeight() > 0) {
-//                    int verticalspacing = Utils.dip2px(mContext, bean.getVerticalSpacing());
-//                    itemHeight = Math.min(itemHeight,Utils.dip2px(mContext, bean.getHeight()));
-//                    while (verticalspacing > 0) {
-//                        int userdefHeigth = (bean.getLine() - 1) * verticalspacing + Utils.dip2px(mContext, bean.getHeight()) * (bean.getLine());
-//                        if (userdefHeigth <= maxPagerHeight) {
-//                            bean.setVerticalSpacing(Utils.px2dip(mContext, verticalspacing));
-//                            break;
-//                        }
-//                        bean.setVerticalSpacing(Utils.px2dip(mContext, verticalspacing));
-//                        verticalspacing = (int)Math.ceil((float)verticalspacing / 2);
-//                    }
-//                }
 
                 for (int i = 0; i < pageCount; i++) {
                     RelativeLayout rl = new RelativeLayout(mContext);
                     GridView gridView = new GridView(mContext);
-                    gridView.setMotionEventSplittingEnabled(false);
                     gridView.setNumColumns(bean.getRow());
                     gridView.setBackgroundColor(Color.TRANSPARENT);
                     gridView.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
@@ -187,18 +103,17 @@ public class EmoticonsPageView extends ViewPager implements IEmoticonsKeyboard, 
                     gridView.setGravity(Gravity.CENTER);
                     gridView.setVerticalScrollBarEnabled(false);
 
-                    List<EmoticonBean> list = new ArrayList<EmoticonBean>();
+                    List<EmoticonBean> list = new ArrayList<>();
                     for (int j = start; j < end; j++) {
                         list.add(emoticonList.get(j));
                     }
 
-                    // 删除按钮
                     if (bean.isShowDelBtn()) {
                         int count = bean.getLine() * bean.getRow();
                         while (list.size() < count - 1) {
                             list.add(null);
                         }
-                        list.add(new EmoticonBean(EmoticonBean.FACE_TYPE_DEL, "drawable://icon_del", null));
+                        list.add(new EmoticonBean(EmoticonBean.FACE_TYPE_DEL, "drawable://icon_del", null, null));
                     } else {
                         int count = bean.getLine() * bean.getRow();
                         while (list.size() < count) {
@@ -206,9 +121,8 @@ public class EmoticonsPageView extends ViewPager implements IEmoticonsKeyboard, 
                         }
                     }
 
-                    EmoticonsAdapter adapter = new EmoticonsAdapter(mContext, list);
-                    adapter.setHeight(itemHeight, bean.getItemPadding());
-
+                    EmoticonsAdapter adapter = new EmoticonsAdapter(mContext, list, bean.isShownName());
+                    adapter.setHeight(itemHeight, Utils.dip2px(mContext, bean.getItemPadding()));
                     gridView.setAdapter(adapter);
                     rl.addView(gridView, gridParams);
                     mEmoticonPageViews.add(rl);
@@ -223,10 +137,6 @@ public class EmoticonsPageView extends ViewPager implements IEmoticonsKeyboard, 
             }
         }
         mEmoticonsViewPagerAdapter.notifyDataSetChanged();
-
-        if (mOnEmoticonsPageViewListener != null) {
-            mOnEmoticonsPageViewListener.emoticonsPageViewInitFinish(mMaxEmoticonSetPageCount);
-        }
     }
 
     public void setPageSelect(int position) {
@@ -239,6 +149,54 @@ public class EmoticonsPageView extends ViewPager implements IEmoticonsKeyboard, 
         }
     }
 
+    private class PageChangeListener implements OnPageChangeListener {
+        @Override
+        public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) { }
+
+        @Override
+        public void onPageSelected(int position) {
+            if ( mOldPagePosition < 0 ) {
+                mOldPagePosition = 0;
+            }
+            int end = 0;
+            int pagerPosition = 0;
+            for ( EmoticonSetBean emoticonSetBean : mEmoticonSetBeanList ) {
+                int size = getPageCount(emoticonSetBean);
+                if ( end + size > position ) {
+                    mOnEmoticonsPageViewListener.emoticonsPageViewCountChanged(size);
+                    if (mOldPagePosition - end >= size) {
+                        if (position - end >= 0) {
+                            mOnEmoticonsPageViewListener.moveTo(position - end);
+                        }
+                        if (mIViewListeners != null && !mIViewListeners.isEmpty()) {
+                            for (IView listener : mIViewListeners) {
+                                listener.onPageChangeTo(pagerPosition);
+                            }
+                        }
+                        break;
+                    }
+                    if (mOldPagePosition - end < 0) {
+                        mOnEmoticonsPageViewListener.moveTo(0);
+                        if (mIViewListeners != null && !mIViewListeners.isEmpty()) {
+                            for (IView listener : mIViewListeners) {
+                                listener.onPageChangeTo(pagerPosition);
+                            }
+                        }
+                        break;
+                    }
+                    mOnEmoticonsPageViewListener.moveBy(mOldPagePosition - end, position - end);
+                    break;
+                }
+                pagerPosition++;
+                end += size;
+            }
+            mOldPagePosition = position;
+        }
+
+        @Override
+        public void onPageScrollStateChanged(int state) { }
+    }
+
     public int getPageCount(EmoticonSetBean emoticonSetBean) {
         int pageCount = 0;
         if (emoticonSetBean != null && emoticonSetBean.getEmoticonList() != null) {
@@ -249,8 +207,7 @@ public class EmoticonsPageView extends ViewPager implements IEmoticonsKeyboard, 
         return pageCount;
     }
 
-    @Override
-    public void setBuilder(EmoticonsKeyboardBuilder builder) {
+    public void setEmoticonContents(EmoticonsKeyboardBuilder builder) {
         mEmoticonSetBeanList = builder.builder.getEmoticonSetBeanList();
     }
 
@@ -261,14 +218,14 @@ public class EmoticonsPageView extends ViewPager implements IEmoticonsKeyboard, 
         }
 
         @Override
-        public Object instantiateItem(View arg0, int arg1) {
-            ((ViewPager) arg0).addView(mEmoticonPageViews.get(arg1));
-            return mEmoticonPageViews.get(arg1);
+        public Object instantiateItem(ViewGroup container, int position) {
+            container.addView(mEmoticonPageViews.get(position));
+            return mEmoticonPageViews.get(position);
         }
 
         @Override
-        public void destroyItem(View arg0, int arg1, Object arg2) {
-            ((ViewPager) arg0).removeView((View) arg2);
+        public void destroyItem(ViewGroup container, int position, Object object) {
+            container.removeView((View) object);
         }
 
         @Override
@@ -288,11 +245,6 @@ public class EmoticonsPageView extends ViewPager implements IEmoticonsKeyboard, 
     }
 
     @Override
-    public void onItemDisplay(EmoticonBean bean) {
-
-    }
-
-    @Override
     public void onPageChangeTo(int position) {
 
     }
@@ -301,7 +253,7 @@ public class EmoticonsPageView extends ViewPager implements IEmoticonsKeyboard, 
 
     public void addIViewListener(IView listener) {
         if (mIViewListeners == null) {
-            mIViewListeners = new ArrayList<IView>();
+            mIViewListeners = new ArrayList<>();
         }
         mIViewListeners.add(listener);
     }
@@ -311,19 +263,12 @@ public class EmoticonsPageView extends ViewPager implements IEmoticonsKeyboard, 
     }
 
     private OnEmoticonsPageViewListener mOnEmoticonsPageViewListener;
-
     public void setOnIndicatorListener(OnEmoticonsPageViewListener listener) {
         mOnEmoticonsPageViewListener = listener;
     }
-
-    public interface OnEmoticonsPageViewListener {
-
-        void emoticonsPageViewInitFinish(int count);
-
+    public interface OnEmoticonsPageViewListener{
         void emoticonsPageViewCountChanged(int count);
-
-        void playTo(int position);
-
-        void playBy(int oldPosition, int newPosition);
+        void moveTo(int position);
+        void moveBy(int oldPosition, int newPosition);
     }
 }

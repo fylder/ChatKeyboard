@@ -1,38 +1,36 @@
 package fylder.keyboard.lib.adapter;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
-import java.io.IOException;
 import java.util.List;
 
 import fylder.keyboard.lib.R;
 import fylder.keyboard.lib.bean.EmoticonBean;
-import fylder.keyboard.lib.utils.imageloader.ImageBase;
-import fylder.keyboard.lib.utils.imageloader.ImageLoader;
+import fylder.keyboard.lib.utils.EmoticonLoader;
 import fylder.keyboard.lib.view.imp.IView;
 
 
 public class EmoticonsAdapter extends BaseAdapter {
-
-    private LayoutInflater inflater;
     private Context mContext;
 
     private List<EmoticonBean> data;
     private int mItemHeight = 0;
     private int mImgHeight = 0;
+    private boolean isDisplayName = false;
 
-    public EmoticonsAdapter(Context context, List<EmoticonBean> list) {
+    public EmoticonsAdapter(Context context, List<EmoticonBean> list, boolean isDisplayName) {
         this.mContext = context;
-        this.inflater = LayoutInflater.from(context);
         this.data = list;
+        this.isDisplayName = isDisplayName;
     }
 
     @Override
@@ -41,7 +39,7 @@ public class EmoticonsAdapter extends BaseAdapter {
     }
 
     @Override
-    public Object getItem(int position) {
+    public EmoticonBean getItem(int position) {
         return data.get(position);
     }
 
@@ -52,41 +50,29 @@ public class EmoticonsAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        ViewHolder viewHolder = null;
+        ViewHolder viewHolder;
         if (convertView == null) {
-            viewHolder = new ViewHolder();
-            convertView = inflater.inflate(R.layout.item_emoticon, parent, false);
+            convertView = LayoutInflater.from(mContext).inflate(R.layout.emoticons_item, parent, false);
             convertView.setLayoutParams(new AbsListView.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, mItemHeight));
-            viewHolder.iv_face = (ImageView) convertView.findViewById(R.id.item_iv_face);
-            viewHolder.rl_content = (RelativeLayout) convertView.findViewById(R.id.rl_content);
-            viewHolder.rl_parent = (RelativeLayout) convertView.findViewById(R.id.rl_parent);
-            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(mImgHeight, mImgHeight);
-
-            params.addRule(RelativeLayout.CENTER_IN_PARENT);
-            viewHolder.iv_face.setLayoutParams(params);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(mImgHeight, mImgHeight);
+            //params.addRule(RelativeLayout.CENTER_HORIZONTAL);
+            viewHolder = new ViewHolder(convertView);
+            viewHolder.ivEmoticon.setLayoutParams(params);
             convertView.setTag(viewHolder);
         } else {
             viewHolder = (ViewHolder) convertView.getTag();
         }
 
-        final EmoticonBean emoticonBean = data.get(position);
-        if (emoticonBean != null) {
-            // viewHolder.rl_parent.setBackgroundResource(R.drawable.iv_face);
-
-            //暂时不显示
-            if (mOnItemListener != null) {
-                if (ImageBase.Scheme.ofUri(emoticonBean.getIconUri()) == ImageBase.Scheme.UNKNOWN) {
-                    if (mOnItemListener != null) {
-                        mOnItemListener.onItemDisplay(emoticonBean);
-                    }
-                } else {
-                    try {
-                        ImageLoader.getInstance(mContext).displayImage(emoticonBean.getIconUri(), viewHolder.iv_face);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
+        final EmoticonBean emoticonBean = getItem(position);
+        if (emoticonBean != null) {   // exists some empty block
+            //viewHolder.ivEmoticon.setBackgroundResource(R.mipmap.fs_picture);//不需要背景
+            if (isDisplayName) {
+                viewHolder.tvName.setVisibility(View.VISIBLE);
+                viewHolder.tvName.setText(getItem(position).getName());
+            } else {
+                viewHolder.tvName.setVisibility(View.GONE);
             }
+            viewHolder.ivEmoticon.setImageDrawable(EmoticonLoader.getInstance(mContext).getDrawable(emoticonBean.getIconUri()));
 
             convertView.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -97,19 +83,23 @@ public class EmoticonsAdapter extends BaseAdapter {
                 }
             });
         }
+
         return convertView;
     }
 
-    class ViewHolder {
-        public ImageView iv_face;
-        public RelativeLayout rl_parent;
-        public RelativeLayout rl_content;
+    static class ViewHolder {
+        public ImageView ivEmoticon;
+        public TextView tvName;
+
+        public ViewHolder(View view) {
+            ivEmoticon = (ImageView) view.findViewById(R.id.emoticon_item_image);
+            tvName = (TextView) view.findViewById(R.id.emoticon_item_text);
+        }
     }
 
     public void setHeight(int height, int padding) {
         mItemHeight = height;
         mImgHeight = mItemHeight - padding;
-        Log.i("fylderLog", "mItemHeight:" + mItemHeight + "\tmImgHeight:" + mImgHeight);
         notifyDataSetChanged();
     }
 

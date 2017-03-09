@@ -1,34 +1,20 @@
 package fylder.keyboard.lib.bean;
 
-/**
- * 单个表情
- */
 public class EmoticonBean {
 
-    public final static int FACE_TYPE_NOMAL = 0;
+    public final static int FACE_TYPE_NORMAL = 0;
     public final static int FACE_TYPE_DEL = 1;
-    public final static int FACE_TYPE_USERDEF = 2;
+    public final static int FACE_TYPE_USERDEF = 2; // user downloaded emoticons
 
-    /**
-     * 点击处理事件类型
-     */
     private long eventType;
-    /**
-     * 表情图标
-     */
     private String iconUri;
-    /**
-     * 内容
-     */
-    private String content;
+    private String msgUri;
+    private String tag;
+    private String name;
 
-    public long getEventType() {
-        return eventType;
-    }
+    public long getEventType() { return eventType; }
 
-    public void setEventType(long eventType) {
-        this.eventType = eventType;
-    }
+    public void setEventType(long eventType) { this.eventType = eventType; }
 
     public String getIconUri() {
         return iconUri;
@@ -38,27 +24,37 @@ public class EmoticonBean {
         this.iconUri = iconUri;
     }
 
-    public String getContent() {
-        return content;
+    public String getMsgUri() {
+        return msgUri;
     }
 
-    public void setContent(String content) {
-        this.content = content;
+    public void setMsgUri(String msgUri) {
+        this.msgUri = msgUri;
     }
 
-    public static String fromChars(String chars) {
-        return chars;
+    public String getTag() {
+        return tag;
     }
 
-    public static String fromChar(char ch) {
-        return Character.toString(ch);
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 
-    public static String fromCodePoint(int codePoint) {
-        return newString(codePoint);
+    public String getName() {
+        return name;
     }
 
-    public static final String newString(int codePoint) {
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public static String fromChars(String chars) { return chars; }
+
+    public static String fromChar(char ch) { return Character.toString(ch); }
+
+    public static String fromCodePoint(int codePoint) { return newString(codePoint); }
+
+    public static String newString(int codePoint) {
         if (Character.charCount(codePoint) == 1) {
             return String.valueOf(codePoint);
         } else {
@@ -66,10 +62,11 @@ public class EmoticonBean {
         }
     }
 
-    public EmoticonBean(long eventType, String iconUri, String content) {
+    public EmoticonBean(long eventType , String iconUri , String tag, String name){
         this.eventType = eventType;
         this.iconUri = iconUri;
-        this.content = content;
+        this.tag = tag;
+        this.name = name;
     }
 
     public EmoticonBean() {

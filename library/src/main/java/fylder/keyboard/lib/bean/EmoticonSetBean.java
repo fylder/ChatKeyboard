@@ -2,73 +2,69 @@ package fylder.keyboard.lib.bean;
 
 import java.util.ArrayList;
 
-/**
- * 一个表情集合
- */
 public class EmoticonSetBean {
-
     /**
-     * 表情集名称(必须且唯一)
+     * name of set
      */
     private String name;
     /**
-     * 每页行数
+     * line number
      */
     private int line;
     /**
-     * 每页列数
+     * row number
      */
     private int row;
     /**
-     * 表情集图标路径
+     * icon
      */
     private String iconUri;
     /**
-     * 表情集图标名称
-     */
-    private String iconName;
-    /**
-     * 是否在每页最后一项显示删除按钮
+     * is show delete button
      */
     private boolean isShowDelBtn;
     /**
-     * 表情内间距
+     * item padding
      */
     private int itemPadding;
-    /**
-     * 表情列间距
-     */
+
     private int horizontalSpacing;
-    /**
-     * 表情行间距
-     */
+
     private int verticalSpacing;
-    /**
-     * 表情集数据源
-     */
+
     private ArrayList<EmoticonBean> emoticonList;
 
-    public EmoticonSetBean() {
+    private boolean isShownName;
+
+    public EmoticonSetBean(){
     }
 
-    public EmoticonSetBean(String name, int line, int row) {
+    public EmoticonSetBean(String name , int line , int row){
         this.name = name;
         this.line = line;
         this.row = row;
     }
 
-    public EmoticonSetBean(String name, int line, int row, String iconUri, String iconName, boolean isShowDelBtn,
-                           int itemPadding, int horizontalSpacing, int verticalSpacing, ArrayList<EmoticonBean> emoticonList) {
+    public EmoticonSetBean(String name , int line , int row , String iconUri, boolean isShowDelBtn , boolean isShownName,
+                           int itemPadding , int horizontalSpacing , int verticalSpacing , ArrayList<EmoticonBean> emoticonList){
         this.name = name;
         this.line = line;
         this.row = row;
         this.iconUri = iconUri;
-        this.iconName = iconName;
         this.isShowDelBtn = isShowDelBtn;
         this.itemPadding = itemPadding;
         this.horizontalSpacing = horizontalSpacing;
         this.verticalSpacing = verticalSpacing;
         this.emoticonList = emoticonList;
+        this.isShownName = isShownName;
+    }
+
+    public boolean isShownName() {
+        return isShownName;
+    }
+
+    public void setIsShownName(boolean isShownName) {
+        this.isShownName = isShownName;
     }
 
     public String getName() {
@@ -103,14 +99,6 @@ public class EmoticonSetBean {
         this.iconUri = iconUri;
     }
 
-    public String getIconName() {
-        return iconName;
-    }
-
-    public void setIconName(String iconName) {
-        this.iconName = iconName;
-    }
-
     public boolean isShowDelBtn() {
         return isShowDelBtn;
     }
@@ -131,9 +119,7 @@ public class EmoticonSetBean {
         return horizontalSpacing;
     }
 
-    public void setHorizontalSpacing(int horizontalSpacing) {
-        this.horizontalSpacing = horizontalSpacing;
-    }
+    public void setHorizontalSpacing(int horizontalSpacing) { this.horizontalSpacing = horizontalSpacing; }
 
     public int getVerticalSpacing() {
         return verticalSpacing;
@@ -147,7 +133,5 @@ public class EmoticonSetBean {
         return emoticonList;
     }
 
-    public void setEmoticonList(ArrayList<EmoticonBean> emoticonList) {
-        this.emoticonList = emoticonList;
-    }
+    public void setEmoticonList(ArrayList<EmoticonBean> emoticonList) { this.emoticonList = emoticonList; }
 }

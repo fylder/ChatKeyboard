@@ -4,6 +4,13 @@
     android:layout_height="match_parent"
     android:background="#FAFAFA">
 
+    <fylder.keyboard.lib.view.EmoticonsToolBarView
+        android:id="@+id/emoticon_page_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical" />
+
     <fylder.keyboard.lib.view.EmoticonsIndicatorView
         android:id="@+id/item_emotion_indicator"
         android:layout_width="match_parent"
